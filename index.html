@@ -195,9 +195,6 @@
     <p id='bestTime'>Best Time:</p>
     <p id='average'>Average Time: </p>
     <p id='recordAverage'>Record Average: </p>
-    <p id='test'></p>
-    <p id='test2'></p>
-    <p id='test3'></p>
     <script>
         // TODO: fix random shuffle not off seed, custom seeded shuffle
         function mulberry32(a) {
@@ -290,7 +287,6 @@
                 try {
                     document.getElementById('solvedword').innerHTML = shuffledWord.join('')
                 } catch (e) {
-                    //document.getElementById('test').innerHTML = e
 
                 }
                 if (rewriteTime == true) {
@@ -339,7 +335,6 @@
 
                 var swapKey = 0
                 swapLetters = ['', '']
-                //document.getElementById('test2').innerHTML = word
                 word = word.split('')
                 if (dailyWord == true) {
                     shuffledWord = shuffleBySeed(JSON.parse(JSON.stringify(word)), getSeedByDay())
@@ -352,7 +347,6 @@
                 }
                 buildWord(shuffledWord.join(''))
             } catch (e) {
-                document.getElementById('test').innerHTML = e
 
             }
         }
@@ -372,7 +366,6 @@
                     div.appendChild(p);
                 }
             } catch (e) {
-                document.getElementById('test').innerHTML = e
             }
         }
 
@@ -449,7 +442,6 @@
                 document.getElementById('timer').innerHTML = "Time: " + currentTime.toFixed(2) + ' Seconds'
                 currentTime = (Math.round((currentTime + .01) * 100) / 100)
             }
-            //document.getElementById('test3').innerHTML = document.getElementById('daySwitch').checked
         }
         document.getElementById('lengthLimit').addEventListener("change", function() {
             newWord(true);
@@ -477,11 +469,8 @@
         try {
             const url = "https://api.dictionaryapi.dev/api/v2/entries/en/"
         } catch (e) {
-            document.getElementById('test2').innerHTML = e
 
         }
-        document.getElementById('test2').innerHTML = getSeedByDay()
-        document.getElementById('test3').innerHTML = getRandomIntSeeded(1, 10, 16122024)
 
     </script>
 </body>
