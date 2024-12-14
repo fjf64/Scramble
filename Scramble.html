@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+     <script src="Dict.js"></script> 
+    <title>Scramble</title>
+    <style>
+        :root {
+            --blinkState: black;
+        }
+
+        html {
+            height: 100%;
+            overflow: hidden
+        }
+
+        body {
+            color: white;
+            /*#91FF1E*/
+            /*background-color: #3B0203;*/
+            background-image: linear-gradient(#3B0203, #270102);
+            background-size: cover;
+            background-repeat: no-repeat;
+            text-align: center;
+            font-family: monospace;
+            padding: 2vh;
+            height: 100%;
+            display: block;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+
+        }
+
+        .blink {
+            color: var(--blinkState)
+        }
+
+        #unsolvedArea {
+            font-size: 5VW;
+        }
+
+        .letters {
+            display: inline-block;
+            border-style: solid;
+            border-radius: 1VW;
+            border-width: .2VW;
+            letter-spacing: .1VW;
+
+        }
+
+        #solvedword {
+            opacity: 0;
+            border-style: solid;
+            border-radius: 1VW;
+            border-width: 1px;
+            font-size: 5VW;
+            /*width: auto;*/
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 0
+                /*display: inline-flex;*/
+
+        }
+
+        #solvedwordcontainer {
+            text-align: center;
+            align-content: center;
+            /*background: black;*/
+            width: 100%;
+        }
+
+        .shortTextBox {
+            display: flex;
+            align-content: center;
+            text-align: center;
+            width: 13.5VW;
+            border-radius: 1.5VW;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 2VH;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 30VW;
+            /*height: 3.5VH;*/
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* The slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: transparent;
+            border: solid white;
+            border-radius: .75VH;
+            border-width: .1VH;
+            /*color: white;*/
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 2.25VH;
+            width: 2VH;
+            left: .75VW;
+            bottom: .46125VH;
+            top: .4VH;
+            right: 1VW;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        input:checked+.slider {
+            background-color: white;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #05a19e;
+        }
+
+        input:checked+.slider:before {
+            -webkit-transform: translateX(calc(30VW - (2VH + 1.5VH)));
+            -ms-transform: translateX(calc(30VW - (2VH + 1.5VH)));
+            transform: translateX(calc(30VW - (2VH + 1.5VH)));
+            background-color: #3B0203;
+        }
+
+        .dailytext {
+            position: relative;
+            top: .1VH;
+            z-index: 1;
+            font-size: 3VH;
+            right: 1VH;
+            color: white;
+        }
+
+        input:checked~.dailytext {
+            position: relative;
+            top: .25VH;
+            right: 1VH;
+            z-index: 1;
+            font-size: 3VH;
+            color: black;
+        }
+
+        #newWordButton {
+            color: white;
+            background-color: transparent;
+            border-style: solid;
+            border-color: white;
+            border-radius: .75VH;
+        }
+
+    </style>
+</head>
+
+<body>
+    <label class="switch">
+        <input type="checkbox" id='daySwitch' class='checkbox'>
+        <span class="slider"></span>
+        <span class='dailytext'>Daily Word</span>
+    </label>
+
+    <div id='solvedwordcontainer'>
+        <p id='solvedword'>NaN</p>
+
+    </div>
+    <div id='unsolvedArea'>
+    </div>
+    <button onclick='newWord(true)' id='newWordButton'>new word</button>
+    <input type="text" name="fname" value="" placeholder="Word Length:" id='lengthLimit' class='shortTextBox' onchange="newWord()"><br>
+    <p id='wordsSolved'>Words Solved: 0</p>
+    <p id='timer'>0</p>
+    <p id='bestTime'>Best Time:</p>
+    <p id='average'>Average Time: </p>
+    <p id='recordAverage'>Record Average: </p>
+    <p id='test'></p>
+    <p id='test2'></p>
+    <p id='test3'></p>
+    <script>
+        // TODO: fix random shuffle not off seed, custom seeded shuffle
+        function mulberry32(a) {
+            let t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+        var words = url1
+        const average = array => array.reduce((a, b) => a + b) / array.length;
+
+        function getSeedByDay() {
+            let today = new Date();
+            let dd = String(today.getDate()).padStart(2, '0');
+            let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            let yyyy = today.getFullYear();
+            let returner = dd + mm + yyyy
+            return returner
+        }
+
+        var shuffleSteps = 50
+        var word = words[getRandomIntInclusive(0, words.length - 1)]
+        var shuffledWord = ''
+        var swapKey = 0
+        var blinkState = 0
+        var flashState = 0
+        var swapLetters = ['', '']
+        var letterElements = []
+        var currentTime = 0
+        var wordsSolved = 0
+        var highestAverage = undefined
+        var timeStampA = Date.now()
+        var bestTime = undefined
+        var timeDoneList = []
+        var currentAverage = undefined
+        var r = document.querySelector(':root');
+        var dailyWord = false
+        var dailyWordDone = false
+
+
+
+        function listFromNumber(start, end) {
+            //goes to number, inclusive
+            let returnList = []
+            for (let x = start; x <= end; x++) {
+                returnList.push(x)
+            }
+            return returnList
+        }
+
+        function getRandomIntInclusive(min, max) {
+            const minCeiled = Math.ceil(min);
+            const maxFloored = Math.floor(max);
+            return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
+        }
+
+        function getRandomIntSeeded(min, max, seed) {
+            const minCeiled = Math.ceil(min);
+            const maxFloored = Math.floor(max);
+            return Math.floor(mulberry32((seed) >>> 0) * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
+        }
+
+        function shuffleBySeed(array) {
+            let ogArray = JSON.parse(JSON.stringify(array)) //|| array == ogArray
+            for (x = 0; x < shuffleSteps || words.includes(array.join('')); x++) {
+                let currentpos = getRandomIntSeeded(0, array.length - 1, getSeedByDay())
+                let posswitch = getRandomIntSeeded(0, array.length - 1, getSeedByDay() + 12)
+                tempShuf = array[posswitch]
+                array[posswitch] = array[currentpos]
+                array[currentpos] = tempShuf
+            }
+            return array
+        }
+
+        function shuffle(array) {
+            let ogArray = JSON.parse(JSON.stringify(array)) //|| array == ogArray
+            for (x = 0; x < shuffleSteps || words.includes(array.join('')); x++) {
+                let currentpos = getRandomIntInclusive(0, array.length - 1)
+                let posswitch = getRandomIntInclusive(0, array.length - 1)
+                tempShuf = array[posswitch]
+                array[posswitch] = array[currentpos]
+                array[currentpos] = tempShuf
+            }
+            return array
+        }
+
+        function newWord(rewriteTime = false, dailyWord = false) {
+            try {
+
+                try {
+                    document.getElementById('solvedword').innerHTML = shuffledWord.join('')
+                } catch (e) {
+                    //document.getElementById('test').innerHTML = e
+
+                }
+                if (rewriteTime == true) {
+                    currentTime = 0
+                    document.getElementById('timer').innerHTML = "Time: " + 0 + ' Seconds'
+                    wordsSolved = 0
+                    document.getElementById('wordsSolved').innerHTML = 'Words Solved: ' + wordsSolved
+                    timeDoneList = []
+                    timeStampA = Date.now()
+                } else {
+                    wordsSolved += 1
+                    document.getElementById('wordsSolved').innerHTML = 'Words Solved: ' + wordsSolved
+                    timeDoneList.push(Date.now() - timeStampA)
+                    timeStampA = Date.now()
+                    if (timeDoneList.length !== 0 && timeDoneList !== []) {
+                        currentAverage = Math.round(average(timeDoneList)) / 1000
+                        document.getElementById('average').innerHTML = 'Average Time: ' + (Math.round(average(timeDoneList)) / 1000) + ' Seconds'
+                    }
+                    if (highestAverage == undefined || highestAverage > currentAverage && currentAverage !== undefined) {
+                        highestAverage = currentAverage
+                        document.getElementById('recordAverage').innerHTML = 'Record Average: ' + highestAverage + ' Seconds'
+                    }
+                }
+                let wordsWithLimit = []
+                if (document.getElementById('lengthLimit').value == '' || document.getElementById('daySwitch').checked) {
+                    lengthLimit = '4'
+                    wordsWithLimit = JSON.parse(JSON.stringify(words))
+                    if (document.getElementById('daySwitch').checked) {
+                        word = wordsWithLimit[getRandomIntSeeded(0, wordsWithLimit.length - 1, getSeedByDay())]
+                    } else {
+                        word = wordsWithLimit[getRandomIntInclusive(0, wordsWithLimit.length - 1)]
+                    }
+                } else if (parseInt(document.getElementById('lengthLimit').value) > 2 && parseInt(document.getElementById('lengthLimit').value) < 24) {
+                    lengthLimit = document.getElementById('lengthLimit').value
+                    for (x of words) {
+                        if (x.length == parseInt(lengthLimit))
+                            wordsWithLimit.push(x)
+                    }
+                    try {
+                    word = wordsWithLimit[getRandomIntInclusive(0, wordsWithLimit.length - 1)]
+                    } catch(e) {
+                        wordsWithLimit = JSON.parse(JSON.stringify(words))
+                        word = wordsWithLimit[getRandomIntInclusive(0, wordsWithLimit.length - 1)]
+                    }
+                }
+
+                var swapKey = 0
+                swapLetters = ['', '']
+                //document.getElementById('test2').innerHTML = word
+                word = word.split('')
+                if (dailyWord == true) {
+                    shuffledWord = shuffleBySeed(JSON.parse(JSON.stringify(word)), getSeedByDay())
+                } else {
+                    shuffledWord = shuffle(JSON.parse(JSON.stringify(word)))
+                }
+                if ((bestTime == undefined || bestTime > timeDoneList[timeDoneList.length - 1] / 1000) && timeDoneList.length !== 0) {
+                    bestTime = timeDoneList[timeDoneList.length - 1] / 1000
+                    document.getElementById('bestTime').innerHTML = 'Best Time: ' + bestTime + ' Seconds'
+                }
+                buildWord(shuffledWord.join(''))
+            } catch (e) {
+                document.getElementById('test').innerHTML = e
+
+            }
+        }
+
+        function buildWord(buildSpec = '') { //in string
+            try {
+                var div = document.getElementById('unsolvedArea');
+                div.innerHTML = '';
+                for (x in buildSpec.split('')) {
+                    let p = document.createElement("p");
+                    p.innerHTML = buildSpec[x]
+                    p.classList.add("letters");
+                    if (x == parseInt(swapLetters[0] - 1)) {
+                        p.classList.add("blink");
+                    }
+
+                    div.appendChild(p);
+                }
+            } catch (e) {
+                document.getElementById('test').innerHTML = e
+            }
+        }
+
+
+        function blink() {
+            switch (blinkState) {
+                case 0:
+                    blinkState = 1;
+                    //element.style.getPropertyValue("--my-var");
+                    r.style.setProperty("--blinkState", 'grey')
+                    break;
+                case 1:
+                    blinkState = 0;
+                    r.style.setProperty("--blinkState", 'white')
+                    break;
+            }
+        }
+
+        function flash(itemInput) {
+            item = document.getElementById(itemInput)
+            switch (flashState) {
+                case 0:
+                    flashState = 1;
+                    item.style.opacity = 1
+                    setTimeout(function() {
+                        flash(itemInput);
+                    }, 1000);
+                    break;
+                case 1:
+                    flashState = 0;
+                    item.style.opacity = 0
+                    break;
+            }
+
+        }
+
+
+        $(document).bind('keyup', function(e) {
+            e = e || event; // to deal with IE
+            if (listFromNumber(1, word.length).includes(parseInt(String.fromCharCode(e.keyCode))) && dailyWordDone == false) {
+                swapLetters[swapKey] = String.fromCharCode(e.keyCode)
+                if (!(swapLetters.includes(''))) {
+                    let letterStore = shuffledWord[swapLetters[0] - 1]
+                    shuffledWord[swapLetters[0] - 1] = shuffledWord[swapLetters[1] - 1]
+                    shuffledWord[swapLetters[1] - 1] = letterStore
+                    buildWord(shuffledWord.join(''))
+                    swapLetters = ['', '']
+                    swapKey = 1
+                    //document.getElementById('unsolved').innerHTML = shuffledWord.join('')
+                }
+                swapKey = 1 - swapKey
+                buildWord(shuffledWord.join(''))
+                if (words.includes(shuffledWord.join(''))) {
+                    if (dailyWord == false) {
+                        flash('solvedword')
+                    } else {
+                        document.getElementById('solvedword').innerHTML = shuffledWord.join('')
+                        flash('solvedword')
+                    }
+                    if (dailyWord == false) {
+                        newWord()
+                    } else {
+                        dailyWordDone = true
+                    }
+                }
+            }
+            if (String.fromCharCode(e.keyCode) == 'R' && dailyWordDone == false) {
+                newWord(true)
+            }
+        });
+
+        function timerUpdate() {
+            if (!dailyWordDone) {
+                document.getElementById('timer').innerHTML = "Time: " + currentTime.toFixed(2) + ' Seconds'
+                currentTime = (Math.round((currentTime + .01) * 100) / 100)
+            }
+            //document.getElementById('test3').innerHTML = document.getElementById('daySwitch').checked
+        }
+        document.getElementById('lengthLimit').addEventListener("change", function() {
+            newWord(true);
+        });
+        $(".checkbox").change(function() {
+            if (this.checked) {
+                newWord(true, true);
+                document.getElementById('newWordButton').style.display = 'none'
+                document.getElementById('lengthLimit').style.display = 'none'
+                dailyWord = true
+
+            } else {
+                newWord(true, false);
+                document.getElementById('newWordButton').style.display = 'inline-block'
+                document.getElementById('lengthLimit').style.display = 'block'
+                dailyWord = false
+                dailyWordDone = false
+            }
+        });
+        blinkInterval = setInterval(blink, 250)
+        timerInterval = setInterval(timerUpdate, 10)
+        $(document).ready(function() {
+            newWord(true, false)
+        });
+        try {
+            const url = "https://api.dictionaryapi.dev/api/v2/entries/en/"
+        } catch (e) {
+            document.getElementById('test2').innerHTML = e
+
+        }
+        document.getElementById('test2').innerHTML = getSeedByDay()
+        document.getElementById('test3').innerHTML = getRandomIntSeeded(1, 10, 16122024)
+
+    </script>
+</body>
+
+</html>
